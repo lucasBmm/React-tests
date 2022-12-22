@@ -1,0 +1,15 @@
+.container-fluid {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+form {
+    gap: 100px;
+    background-color: aliceblue;
+    padding: 20px;
+}
+
+.form-group {
+    gap: 10px;
+}
