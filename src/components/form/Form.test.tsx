@@ -30,8 +30,8 @@ describe('Form component tests', () => {
         const randomEmail = 'login@email.com';
         const randomPassword = 'somePassword';
 
-        fireEvent.change(emailInput, { target: { value: randomEmail } });
-        fireEvent.change(passwordInput, { target: { value: randomPassword } });
+        userEvent.type(emailInput, randomEmail);
+        userEvent.type(passwordInput,randomPassword);
 
         expect(emailInput).toHaveValue(randomEmail);
         expect(passwordInput).toHaveValue(randomPassword);
@@ -45,31 +45,27 @@ describe('Form component tests', () => {
     });
 
     it('Should disable submit button when have form errors', () => {
-        fireEvent.change(emailInput, { target: { value: '' } });
-        fireEvent.change(passwordInput, { target: { value: '' } });
-
-        fireEvent.focusOut(emailInput);
-        fireEvent.focusOut(passwordInput);
+        userEvent.type(emailInput, 'foo');
+        userEvent.type(passwordInput, 'bar');
 
         expect(screen.getByRole('button')).toBeDisabled();
     });
 
     it('Should successfully login when correct user credentials are given', async () => {
-        fireEvent.change(emailInput, { target: { value: 'user@email.com' } });
-        fireEvent.change(passwordInput, { target: { value: 'password' } });
+        userEvent.type(emailInput, 'user@email.com');
+        userEvent.type(passwordInput, 'password');
 
         const data = { token: 'abcde' };
 
         (axiosMock.post as jest.Mock).mockResolvedValueOnce({data});
+        const setItem = jest.spyOn(Storage.prototype, 'setItem')
 
         const button = screen.getByRole('button');
 
         fireEvent.click(button);
 
         expect(axiosMock.post).toBeCalledTimes(1);
-
-        // TODO: Learn how to access redux store state with Jest
-        // TODO: Check for localstorage?
+        waitFor(() => expect(setItem).toHaveBeenCalled());
     });
 
     it('Should display error message when user credentials are incorrect', async () => {

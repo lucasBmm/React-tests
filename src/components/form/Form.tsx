@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks';
 import { apiError } from '../../interfaces/api';
 
 export const loginUser = (form: {email: string, password: string}) => {
-    return axios.post('http://localhost:9080', { form });
+    return axios.post(process.env.REACT_APP_API_URL!, { form });
 }
 
 export function Form(): JSX.Element {
