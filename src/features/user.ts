@@ -6,7 +6,7 @@ export type userState = {
     token: string
 }
 
-const INITIAL_STATE: userState = {
+export const INITIAL_STATE: userState = {
     email:  localStorage.getItem('user') != null ? JSON.parse(localStorage.getItem('user')!).email : '',
     token:  localStorage.getItem('user') != null ? JSON.parse(localStorage.getItem('user')!).token : ''
 }
@@ -34,6 +34,6 @@ export const userSlice = createSlice({
 
 export const { addUser, removeUser } = userSlice.actions;
 
-export const selectUser = (state: RootState) => { return { user: state.userReducer } };
+export const selectUser = (state: RootState) => ({ user: state.userReducer });
 
 export default userSlice.reducer;

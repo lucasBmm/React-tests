@@ -1,23 +1,21 @@
-import { fireEvent, getByRole, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Form } from "./Form";
 import axiosMock from "axios";
 import { Provider } from 'react-redux';
 import store from '../../app/store';
 import '@testing-library/jest-dom';
-import * as Redux from "react-redux";
+import { apiError } from "../../interfaces/api";
+import { act } from "react-dom/test-utils";
+import userEvent from "@testing-library/user-event";
 
 jest.mock("axios");
-jest.mock("react-redux", () => ({
-    ...jest.requireActual("react-redux"),
-    useSelector: jest.fn(),
-}));
 
 describe('Form component tests', () => {
     let emailInput: HTMLInputElement;
     let passwordInput: HTMLInputElement;
 
-    beforeEach(() => {
-        render(<Provider store={store}><Form /></Provider>);
+    beforeEach(async () => {
+        await act(async () => render(<Provider store={store}><Form /></Provider>));
 
         emailInput    = screen.getByPlaceholderText<HTMLInputElement>('Enter email');
         passwordInput = screen.getByPlaceholderText<HTMLInputElement>('Enter password');
@@ -40,15 +38,10 @@ describe('Form component tests', () => {
     });
 
     it('Should warn user when none or invalid e-mail or password is provided', () => {
-        fireEvent.change(emailInput, { target: { value: '' } });
-        fireEvent.change(passwordInput, { target: { value: '' } });
+        userEvent.type(emailInput, 'foo');
+        userEvent.type(passwordInput, 'bar');
 
-        fireEvent.focusOut(emailInput);
-        fireEvent.focusOut(passwordInput);
-
-        let mensagemErro = screen.queryAllByRole('alert');
-
-        expect(mensagemErro).toHaveLength(2);
+        waitFor(() => expect(screen.queryAllByRole('alert')).toHaveLength(2));
     });
 
     it('Should disable submit button when have form errors', () => {
@@ -61,7 +54,7 @@ describe('Form component tests', () => {
         expect(screen.getByRole('button')).toBeDisabled();
     });
 
-    it('Should successfully login when correct user credentials are given and set token on local storage', async () => {
+    it('Should successfully login when correct user credentials are given', async () => {
         fireEvent.change(emailInput, { target: { value: 'user@email.com' } });
         fireEvent.change(passwordInput, { target: { value: 'password' } });
 
@@ -75,12 +68,25 @@ describe('Form component tests', () => {
 
         expect(axiosMock.post).toBeCalledTimes(1);
 
-        // Redux mock
-        (Redux.useSelector as jest.Mock).mockImplementation((callback) => {
-            return callback({ email: 'user@email.com', token: data.token });
+        // TODO: Learn how to access redux store state with Jest
+        // TODO: Check for localstorage?
+    });
+
+    it('Should display error message when user credentials are incorrect', async () => {
+        fireEvent.change(emailInput, { target: { value: 'user@email.com' } });
+        fireEvent.change(passwordInput, { target: { value: 'password' } });
+
+        const response: { data: apiError} = { data: { message: 'The user has not been found' } };
+
+        (axiosMock.post as jest.Mock).mockResolvedValueOnce(response);
+
+        const button = screen.getByRole('button');
+
+        await act( async () => {
+            fireEvent.click(button);
         });
 
-        waitFor(() => expect(JSON.parse(localStorage.getItem('user')!)).toBe({ email: 'user@email.com', token: data.token })) ;
+        waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(response.data.message));
     });
 });
 

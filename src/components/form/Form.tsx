@@ -1,17 +1,17 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { addUser, selectUser, userState } from '../../features/user';
 import { useAppDispatch, useAppSelector } from '../../app/hooks';
+import { apiError } from '../../interfaces/api';
 
 export const loginUser = (form: {email: string, password: string}) => {
     return axios.post('http://localhost:9080', { form });
-    // return new Promise<any>(resolve => resolve({data: {token: 'sadasd'}}));
 }
 
 export function Form(): JSX.Element {
     const [ formValues, setFormValues ] = useState({ email: '', password: '' });
-    const [ formError, setFormError ]   = useState({ email: '', password: '' });
+    const [ formError, setFormError   ] = useState({ email: '', password: '', credentials: '' });
     const dispatch = useAppDispatch();
 
     const onFormChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -26,7 +26,7 @@ export function Form(): JSX.Element {
         }
     }
 
-    const checkPassword = () => {
+    const checkPassword = (): void => {
         if (formValues.password.length < 3) {
             setFormError({...formError, password: 'User password must be at least 3 caracters long'});
         } else {
@@ -34,17 +34,21 @@ export function Form(): JSX.Element {
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        loginUser(formValues).then(response => {
-            console.log(response)
+        setFormError({...formError, credentials: ''});
+        loginUser(formValues)
+        .then((response: AxiosResponse<{ token: string }>) => {
             dispatch(
                 addUser({ 
                     email: formValues.email, 
                     token: response.data.token 
                 }
             ));
+        })
+        .catch((error: AxiosResponse<apiError>) => {
+            setFormError({...formError, credentials: error.data.message});
         });
     }
 
@@ -81,6 +85,7 @@ export function Form(): JSX.Element {
                         />
                         {formError.password && <small role='alert' className="form-text text-danger"> {formError.password} </small>}
                     </div>
+                    {formError.credentials && <small role='alert' className="form-text text-danger"> {formError.credentials} </small>}
                     <button 
                         type="submit" 
                         className="btn btn-primary" 
